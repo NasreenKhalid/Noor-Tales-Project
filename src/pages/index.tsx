@@ -42,7 +42,16 @@ export default function HomePage({
   const [currentDuaIndex, setCurrentDuaIndex] = useState(0);
   const [allDuas, setAllDuas] = useState<Dua[]>([]);
   const [isAutoSliding, setIsAutoSliding] = useState(true);
-  
+  const [translationLanguage, setTranslationLanguage] = useState("english");
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [translations, setTranslations] = useState({
+    english: "",
+    urdu: "",
+    french: "",
+    spanish: "",
+    indonesian: "",
+    turkish: "",
+  });
   // Debug logging
   useEffect(() => {
     console.log("Component Received Props:");
@@ -60,48 +69,54 @@ export default function HomePage({
         const duas = duaApi.getSampleDuas();
         setAllDuas(duas);
       } catch (error) {
-        console.error('Error loading duas:', error);
+        console.error("Error loading duas:", error);
       }
     };
-    
+
     loadAllDuas();
   }, []);
 
-// Set up auto-sliding
-useEffect(() => {
-  let slideInterval: NodeJS.Timeout;
   
-  if (isAutoSliding && allDuas.length > 1) {
-    slideInterval = setInterval(() => {
-      setCurrentDuaIndex(prevIndex => (prevIndex + 1) % allDuas.length);
-    }, 10000); // Change dua every 10 seconds
-  }
   
-  return () => {
-    if (slideInterval) clearInterval(slideInterval);
-  };
-}, [isAutoSliding, allDuas.length]);
-// Navigation handlers
-const goToPrevDua = useCallback(() => {
-  setCurrentDuaIndex(prevIndex => (prevIndex - 1 + allDuas.length) % allDuas.length);
-  // Temporarily pause auto-sliding when manually navigating
-  setIsAutoSliding(false);
-  setTimeout(() => setIsAutoSliding(true), 15000); // Resume after 15 seconds
-}, [allDuas.length]);
+  // Set up auto-sliding
+  useEffect(() => {
+    let slideInterval: NodeJS.Timeout;
 
-const goToNextDua = useCallback(() => {
-  setCurrentDuaIndex(prevIndex => (prevIndex + 1) % allDuas.length);
-  // Temporarily pause auto-sliding when manually navigating
-  setIsAutoSliding(false);
-  setTimeout(() => setIsAutoSliding(true), 15000); // Resume after 15 seconds
-}, [allDuas.length]);
+    if (isAutoSliding && allDuas.length > 1) {
+      slideInterval = setInterval(() => {
+        setCurrentDuaIndex((prevIndex) => (prevIndex + 1) % allDuas.length);
+      }, 10000); // Change dua every 10 seconds
+    }
 
-const goToDua = useCallback((index: number) => {
-  setCurrentDuaIndex(index);
-  // Temporarily pause auto-sliding when manually navigating
-  setIsAutoSliding(false);
-  setTimeout(() => setIsAutoSliding(true), 15000); // Resume after 15 seconds
-}, []);
+    return () => {
+      if (slideInterval) clearInterval(slideInterval);
+    };
+  }, [isAutoSliding, allDuas.length]);
+  // Navigation handlers
+  const goToPrevDua = useCallback(() => {
+    setCurrentDuaIndex(
+      (prevIndex) => (prevIndex - 1 + allDuas.length) % allDuas.length
+    );
+    // Temporarily pause auto-sliding when manually navigating
+    setIsAutoSliding(false);
+    setTimeout(() => setIsAutoSliding(true), 15000); // Resume after 15 seconds
+  }, [allDuas.length]);
+
+  const goToNextDua = useCallback(() => {
+    setCurrentDuaIndex((prevIndex) => (prevIndex + 1) % allDuas.length);
+    // Temporarily pause auto-sliding when manually navigating
+    setIsAutoSliding(false);
+    setTimeout(() => setIsAutoSliding(true), 15000); // Resume after 15 seconds
+  }, [allDuas.length]);
+
+  const goToDua = useCallback((index: number) => {
+    setCurrentDuaIndex(index);
+    // Temporarily pause auto-sliding when manually navigating
+    setIsAutoSliding(false);
+    setTimeout(() => setIsAutoSliding(true), 15000); // Resume after 15 seconds
+  }, []);
+
+ 
 
 
   useEffect(() => {
@@ -189,12 +204,106 @@ const goToDua = useCallback((index: number) => {
     },
   };
 
+
+  useEffect(() => {
+    if (showLanguageSelector) {
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.language-selector')) {
+          setShowLanguageSelector(false);
+        }
+      };
+      
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showLanguageSelector]);
+
+ 
+
+
+
+
+  useEffect(() => {
+    if (showLanguageSelector) {
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.language-selector')) {
+          setShowLanguageSelector(false);
+        }
+      };
+      
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showLanguageSelector]);
+
   // Use actual data or fallbacks
   const displayDua = duaOfDay || fallbackDua;
   const displayPrayerTimes = prayerTimes || fallbackPrayerTimes;
 
-// Get the current dua to display
-const currentDua = allDuas.length > 0 ? allDuas[currentDuaIndex] : displayDua;
+  // Get the current dua to display
+  const currentDua = allDuas.length > 0 ? allDuas[currentDuaIndex] : displayDua;
+  useEffect(() => {
+    if (currentDua) {
+      // For demo purposes, we'll create more realistic sample translations
+      // In a production app, these would come from your API or database
+      const englishTranslation = currentDua.translation || '';
+      
+      setTranslations({
+        english: englishTranslation,
+        urdu: `بِسمِ اللہِ الرَّحمٰنِ الرَّحِيم - ${currentDua.title} - اللہ سے مدد مانگنے کی دعا۔`,
+        french: `${englishTranslation} - Une supplication pour demander l'aide d'Allah.`,
+        spanish: `${englishTranslation} - Una súplica para pedir la ayuda de Allah.`,
+        indonesian: `${englishTranslation} - Doa memohon pertolongan kepada Allah.`,
+        turkish: `${englishTranslation} - Allah'tan yardım istemek için bir dua.`
+      });
+      
+      // Log to help with debugging
+      console.log(`Set translations for dua: ${currentDua.title}`);
+    }
+  }, [currentDua]);
+
+  useEffect(() => {
+    console.log(`Language changed to: ${translationLanguage}`);
+    console.log("Current translation:", translations[translationLanguage]);
+  }, [translationLanguage, translations]);
+ 
+  useEffect(() => {
+    let slideInterval: NodeJS.Timeout;
+    
+    if (isAutoSliding && allDuas.length > 1) {
+      slideInterval = setInterval(() => {
+        setCurrentDuaIndex(prevIndex => (prevIndex + 1) % allDuas.length);
+      }, 10000); // Change dua every 10 seconds
+    }
+    
+    return () => {
+      if (slideInterval) clearInterval(slideInterval);
+    };
+  }, [isAutoSliding, allDuas.length]);
+
+ // Close language selector when clicking outside
+ useEffect(() => {
+  if (showLanguageSelector) {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.language-selector')) {
+        setShowLanguageSelector(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }
+}, [showLanguageSelector]);
+ 
   return (
     <Layout title="Noor Tales - Daily Islamic Stories for Kids">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -221,67 +330,89 @@ const currentDua = allDuas.length > 0 ? allDuas[currentDuaIndex] : displayDua;
           <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
             <div className="flex flex-wrap md:flex-nowrap">
               {/* Islamic Date Side */}
-              <div className="w-full md:w-1/3 p-3 md:border-r border-gray-100 flex flex-col justify-center items-center">
-                <h3 className="text-base font-semibold text-gray-700 mb-1">
+              <div className="w-full md:w-1/3 p-4 md:border-r border-gray-100 flex flex-col justify-center items-center">
+                <h3 className="text-lg font-semibold text-gray-700 mb-2">
                   📅 Today's Date
                 </h3>
-                <p className="text-sm text-gray-500">
-                  {today || "Thursday, March 6, 2025"}
+                <p className="text-base text-gray-500">
+                  {today || "Saturday, March 8, 2025"}
                 </p>
 
                 {/* Always display the Hijri date (either from API or fallback) */}
-                {hijriDate && hijriDate.data && (
-                  <div className="mt-1 text-center">
-                    <p className="text-primary font-medium text-sm">
-                      {hijriDate.data.hijri.day} {hijriDate.data.hijri.month.en}{" "}
-                      {hijriDate.data.hijri.year} AH
-                    </p>
-                    <p className="text-accent font-title">
-                      {hijriDate.data.hijri.month.ar}
-                    </p>
-                  </div>
-                )}
+                <div className="mt-2 text-center">
+                  {hijriDate && hijriDate.data ? (
+                    <>
+                      <p className="text-primary font-medium text-base">
+                        {hijriDate.data.hijri.day}{" "}
+                        {hijriDate.data.hijri.month.en}{" "}
+                        {hijriDate.data.hijri.year} AH
+                      </p>
+                      <p className="text-accent font-title text-lg">
+                        {hijriDate.data.hijri.month.ar}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-primary font-medium text-base">
+                        6 Rajab 1447 AH
+                      </p>
+                      <p className="text-accent font-title text-lg">رجب</p>
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Prayer Times Side */}
-              <div className="w-full md:w-2/3 p-3">
-                <h3 className="text-base font-semibold text-gray-700 mb-2 text-center md:text-left">
+              <div className="w-full md:w-2/3 p-4">
+                <h3 className="text-lg font-semibold text-gray-700 mb-3 text-center md:text-left">
                   🕌 Prayer Times
                 </h3>
-                <div className="grid grid-cols-3 md:grid-cols-6 gap-1 text-xs">
-                  <div className="text-center p-1">
-                    <span className="block text-gray-600">Fajr</span>
-                    <span className="font-semibold text-primary">
+                <div className="grid grid-cols-3 gap-2 md:gap-3">
+                  <div className="bg-primary/5 rounded-lg text-center p-2">
+                    <span className="block text-gray-700 text-sm font-medium">
+                      <span className="text-lg">🌅</span> Fajr
+                    </span>
+                    <span className="font-semibold text-primary text-base">
                       {displayPrayerTimes.data.timings.Fajr}
                     </span>
                   </div>
-                  <div className="text-center p-1">
-                    <span className="block text-gray-600">Sunrise</span>
-                    <span className="font-semibold text-primary">
+                  <div className="bg-primary/5 rounded-lg text-center p-2">
+                    <span className="block text-gray-700 text-sm font-medium">
+                      <span className="text-lg">🌞</span> Sunrise
+                    </span>
+                    <span className="font-semibold text-primary text-base">
                       {displayPrayerTimes.data.timings.Sunrise}
                     </span>
                   </div>
-                  <div className="text-center p-1">
-                    <span className="block text-gray-600">Dhuhr</span>
-                    <span className="font-semibold text-primary">
+                  <div className="bg-primary/5 rounded-lg text-center p-2">
+                    <span className="block text-gray-700 text-sm font-medium">
+                      <span className="text-lg">☀️</span> Dhuhr
+                    </span>
+                    <span className="font-semibold text-primary text-base">
                       {displayPrayerTimes.data.timings.Dhuhr}
                     </span>
                   </div>
-                  <div className="text-center p-1">
-                    <span className="block text-gray-600">Asr</span>
-                    <span className="font-semibold text-primary">
+                  <div className="bg-primary/5 rounded-lg text-center p-2">
+                    <span className="block text-gray-700 text-sm font-medium">
+                      <span className="text-lg">🌇</span> Asr
+                    </span>
+                    <span className="font-semibold text-primary text-base">
                       {displayPrayerTimes.data.timings.Asr}
                     </span>
                   </div>
-                  <div className="text-center p-1">
-                    <span className="block text-gray-600">Maghrib</span>
-                    <span className="font-semibold text-primary">
+                  <div className="bg-primary/5 rounded-lg text-center p-2">
+                    <span className="block text-gray-700 text-sm font-medium">
+                      <span className="text-lg">🌆</span> Maghrib
+                    </span>
+                    <span className="font-semibold text-primary text-base">
                       {displayPrayerTimes.data.timings.Maghrib}
                     </span>
                   </div>
-                  <div className="text-center p-1">
-                    <span className="block text-gray-600">Isha</span>
-                    <span className="font-semibold text-primary">
+                  <div className="bg-primary/5 rounded-lg text-center p-2">
+                    <span className="block text-gray-700 text-sm font-medium">
+                      <span className="text-lg">🌙</span> Isha
+                    </span>
+                    <span className="font-semibold text-primary text-base">
                       {displayPrayerTimes.data.timings.Isha}
                     </span>
                   </div>
@@ -291,227 +422,427 @@ const currentDua = allDuas.length > 0 ? allDuas[currentDuaIndex] : displayDua;
           </div>
         </section>
 
-        {/* Dua of the Day Section */}
+  
+
+        {/* Featured Content Cards */}
         <section className="mb-8">
-          <div className="relative overflow-hidden rounded-xl shadow-md h-[400px]">
-            {/* Background Gradient */}
-            <div className="absolute inset-0 w-full h-full z-0">
-              {/* Add fallback background color/gradient in case video doesn't load */}
-              <div className="w-full h-full bg-gradient-to-r from-primary/20 to-accent/20"></div>
+          <h2 className="text-2xl font-title font-bold text-primary mb-4 text-center">
+            Today's Featured Content
+          </h2>
 
-              {/* Video background */}
-              <video
-                className="absolute inset-0 w-full h-full object-cover"
-                autoPlay
-                muted
-                loop
-                playsInline
-                poster="/images/islamic-bg-poster.jpg" /* Optional poster image as fallback */
-              >
-                <source src="/videos/islamic-background.mp4" type="video/mp4" />
-                {/* Your browser does not support the video tag. */}
-              </video>
-
-              {/* Gradient overlay on top of video */}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40"></div>
-            </div>
-
-            {/* Content Overlay */}
-            <div className="absolute inset-0 z-10 flex flex-col justify-center items-center text-white p-5">
-              <div className="text-center mb-4">
-                <h2 className="text-xs uppercase tracking-widest mb-1 opacity-80">
-                  Dua of the Day
-                </h2>
-                <div className="w-8 h-0.5 bg-white mx-auto mb-4 opacity-70"></div>
-                <h3 className="text-2xl md:text-3xl font-title mb-2">
-                  {displayDua.title}
-                </h3>
-                <p className="text-sm opacity-90 mb-6">
-                  {displayDua.situation}
-                </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Dua Card */}
+            <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-xl overflow-hidden shadow-md border border-primary/10 relative">
+              <div className="h-12 bg-primary flex items-center justify-between px-4">
+                <h3 className="text-white font-semibold">Dua of the Day</h3>
+                <span className="bg-accent text-primary text-xs px-2 py-0.5 rounded-full font-medium">
+                  Featured
+                </span>
               </div>
 
-              <div className="max-w-xl w-full backdrop-blur-sm p-6 rounded-lg bg-gradient-to-b from-black/20 to-black/30 border border-white/10">
-                <div className="mb-4">
-                   {/* Arabic text with improved font styling */}
-          <p className="font-title text-lg md:text-xl text-center mb-3 leading-relaxed"
-             style={{ 
-               fontFamily: '"Amiri", "Scheherazade New", serif', 
-               letterSpacing: '0.02em',
-               lineHeight: '1.8'
-             }}>
-            {displayDua.arabic_text}
-          </p>
-                  <p className="italic text-center text-xs md:text-sm opacity-80">
-                    {displayDua.transliteration}
-                  </p>
-                </div>
+              <div className="relative h-[400px]">
+                {/* Video Background */}
+                <div className="absolute inset-0 w-full h-full z-0">
+                  {/* Fallback gradient background */}
+                  <div className="w-full h-full bg-gradient-to-r from-primary/20 to-accent/20"></div>
 
-                <div className="h-px bg-white opacity-20 my-4"></div>
-
-                <div className="text-center">
-                  <p className="mb-6 text-sm md:text-base">
-                    {displayDua.translation}
-                  </p>
-
-                  <Link
-                    href="/duas"
-                    className="inline-block bg-accent text-primary font-medium px-6 py-2 text-sm uppercase tracking-widest 
-                            transition-all duration-300 hover:bg-primary hover:text-white hover:scale-105 
-                            rounded-md border border-accent/50 shadow-lg"
+                  {/* Video element */}
+                  <video
+                    className="absolute inset-0 w-full h-full object-cover"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
                   >
-                    Explore More Duas
-                  </Link>
-                </div>
-              </div>
-
-              {/* Audio Control (if available) */}
-              {displayDua.audio_url && (
-                <div className="absolute bottom-4 right-4">
-                  <button
-                    onClick={() => setIsDuaAudioPlaying(!isDuaAudioPlaying)}
-                    className="bg-accent/20 backdrop-blur-sm text-white p-2 rounded-full 
-                            hover:bg-accent/50 transition-all duration-300"
-                  >
-                    {isDuaAudioPlaying ? <FaPause /> : <FaPlay />}
-                  </button>
-
-                  <div className="hidden">
-                    <ReactAudioPlayer
-                      src={displayDua.audio_url}
-                      autoPlay={isDuaAudioPlaying}
-                      controls
-                      onPlay={() => setIsDuaAudioPlaying(true)}
-                      onPause={() => setIsDuaAudioPlaying(false)}
-                      onEnded={() => setIsDuaAudioPlaying(false)}
+                    <source
+                      src="/videos/islamic-background.mp4"
+                      type="video/mp4"
                     />
-                  </div>
+                    {/* Your browser does not support the video tag. */}
+                  </video>
+
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/40"></div>
                 </div>
-              )}
-{/* Auto-Slider Navigation Dots */}
-      <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-        <button 
-          className="w-2 h-2 rounded-full bg-white opacity-100" 
-          aria-label="Dua slide 1"
-        ></button>
-        <button 
-          className="w-2 h-2 rounded-full bg-white opacity-50 hover:opacity-100 transition-opacity" 
-          aria-label="Dua slide 2"
-        ></button>
-        <button 
-          className="w-2 h-2 rounded-full bg-white opacity-50 hover:opacity-100 transition-opacity" 
-          aria-label="Dua slide 3"
-        ></button>
-      </div>
+
+                {/* Dua Content */}
+                <div className="absolute inset-0 z-10 flex flex-col justify-center items-center text-white p-5">
+                  <div className="text-center mb-3">
+                    <h3 className="text-xl md:text-2xl font-title mb-1">
+                      {currentDua.title}
+                    </h3>
+                    <p className="text-sm opacity-90 mb-4">
+                      {currentDua.situation}
+                    </p>
+                  </div>
+
+                  <div className="max-w-xl w-full backdrop-blur-sm p-4 rounded-lg bg-gradient-to-b from-black/10 to-black/20 border border-white/10">
+                    <div className="mb-3">
+                      {/* Arabic text with improved font styling */}
+                      <p className="arabic-text text-lg md:text-xl text-center mb-2 leading-relaxed">
+                        {currentDua.arabic_text}
+                      </p>
+                      <p className="italic text-center text-xs md:text-sm opacity-80">
+                        {currentDua.transliteration}
+                      </p>
+                    </div>
+
+                    <div className="h-px bg-white opacity-20 my-3"></div>
+
+                    <div className="text-center">
+    <p className="mb-3 text-sm">
+      {translations[translationLanguage]}
+    </p>
+  
+    <div className="relative inline-block text-left mb-4 language-selector">
+      <button
+        type="button"
+        onClick={() => setShowLanguageSelector(!showLanguageSelector)}
+        className="inline-flex items-center justify-center px-3 py-1 text-xs font-medium text-white bg-primary/70 rounded hover:bg-primary transition-colors"
+      >
+        <span className="mr-1">
+          {translationLanguage === 'english' ? 'English' : 
+           translationLanguage === 'urdu' ? 'اردو' :
+           translationLanguage === 'french' ? 'Français' :
+           translationLanguage === 'spanish' ? 'Español' :
+           translationLanguage === 'indonesian' ? 'Bahasa Indonesia' :
+           translationLanguage === 'turkish' ? 'Türkçe' : 'Select Language'}
+        </span>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
       
-      {/* Navigation Arrows for Slider */}
-      <button 
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-all"
-        aria-label="Previous dua"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-      <button 
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-all"
-        aria-label="Next dua"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-
-
-            </div>
+      {showLanguageSelector && (
+        <div 
+          className="origin-top-right absolute right-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+          role="menu"
+          aria-orientation="vertical"
+          aria-labelledby="language-menu"
+        >
+          <div className="py-1" role="none">
+            <button
+              onClick={() => { setTranslationLanguage('english'); setShowLanguageSelector(false); }}
+              className={`block w-full text-left px-4 py-2 text-sm ${translationLanguage === 'english' ? 'bg-gray-100 text-primary' : 'text-gray-700'}`}
+              role="menuitem"
+            >
+              English
+            </button>
+            <button
+              onClick={() => { setTranslationLanguage('urdu'); setShowLanguageSelector(false); }}
+              className={`block w-full text-left px-4 py-2 text-sm ${translationLanguage === 'urdu' ? 'bg-gray-100 text-primary' : 'text-gray-700'}`}
+              role="menuitem"
+            >
+              اردو
+            </button>
+            <button
+              onClick={() => { setTranslationLanguage('french'); setShowLanguageSelector(false); }}
+              className={`block w-full text-left px-4 py-2 text-sm ${translationLanguage === 'french' ? 'bg-gray-100 text-primary' : 'text-gray-700'}`}
+              role="menuitem"
+            >
+              Français
+            </button>
+            <button
+              onClick={() => { setTranslationLanguage('spanish'); setShowLanguageSelector(false); }}
+              className={`block w-full text-left px-4 py-2 text-sm ${translationLanguage === 'spanish' ? 'bg-gray-100 text-primary' : 'text-gray-700'}`}
+              role="menuitem"
+            >
+              Español
+            </button>
+            <button
+              onClick={() => { setTranslationLanguage('indonesian'); setShowLanguageSelector(false); }}
+              className={`block w-full text-left px-4 py-2 text-sm ${translationLanguage === 'indonesian' ? 'bg-gray-100 text-primary' : 'text-gray-700'}`}
+              role="menuitem"
+            >
+              Bahasa Indonesia
+            </button>
+            <button
+              onClick={() => { setTranslationLanguage('turkish'); setShowLanguageSelector(false); }}
+              className={`block w-full text-left px-4 py-2 text-sm ${translationLanguage === 'turkish' ? 'bg-gray-100 text-primary' : 'text-gray-700'}`}
+              role="menuitem"
+            >
+              Türkçe
+            </button>
           </div>
-        </section>
+        </div>
+      )}
+    </div>
+  </div>
 
-        {/* Today's Story Section */}
-        <section className="mb-8">
-          <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl shadow-md overflow-hidden border border-primary/10 relative">
-            <div className="p-5">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-title font-bold text-primary">
-                  Today's Story
-                </h2>
-                <span className="bg-accent text-primary text-xs px-3 py-1 rounded-full font-medium">
+
+
+                  </div>
+
+                  {/* Navigation Arrows for Slider */}
+                  <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-2">
+                    {allDuas.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => goToDua(index)}
+                        className={`w-2 h-2 rounded-full transition-opacity ${
+                          index === currentDuaIndex
+                            ? "bg-white opacity-100"
+                            : "bg-white opacity-50 hover:opacity-75"
+                        }`}
+                        aria-label={`Dua slide ${index + 1}`}
+                      ></button>
+                    ))}
+                  </div>
+
+                  {allDuas.length > 1 && (
+                    <>
+                      <button
+                        onClick={goToPrevDua}
+                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-1 rounded-full transition-all"
+                        aria-label="Previous dua"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          className="w-4 h-4"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 19l-7-7 7-7"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={goToNextDua}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-1 rounded-full transition-all"
+                        aria-label="Next dua"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          className="w-4 h-4"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Audio Control (if available) */}
+                {currentDua.audio_url && (
+                  <div className="absolute bottom-4 right-4 z-20">
+                    <button
+                      onClick={() => setIsDuaAudioPlaying(!isDuaAudioPlaying)}
+                      className="bg-accent/20 backdrop-blur-sm text-white p-2 rounded-full hover:bg-accent/50 transition-all"
+                    >
+                      {isDuaAudioPlaying ? <FaPause /> : <FaPlay />}
+                    </button>
+
+                    <div className="hidden">
+                      <ReactAudioPlayer
+                        src={currentDua.audio_url}
+                        autoPlay={isDuaAudioPlaying}
+                        controls
+                        onPlay={() => setIsDuaAudioPlaying(true)}
+                        onPause={() => setIsDuaAudioPlaying(false)}
+                        onEnded={() => setIsDuaAudioPlaying(false)}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 flex justify-center">
+                <Link
+                  href="/duas"
+                  className="inline-block bg-accent text-primary font-medium px-4 py-1.5 text-sm uppercase tracking-wide
+                 transition-all duration-300 hover:bg-primary hover:text-white hover:scale-105 
+                 rounded-md border border-accent/50 shadow-md"
+                >
+                  Explore More Duas
+                </Link>
+              </div>
+            </div>
+
+            {/* Story Card */}
+            <div className="bg-gradient-to-r from-accent/5 to-accent/10 rounded-xl overflow-hidden shadow-md border border-accent/10 relative">
+              <div className="h-12 bg-accent flex items-center justify-between px-4">
+                <h3 className="text-primary font-semibold">Today's Story</h3>
+                <span className="bg-primary text-white text-xs px-2 py-0.5 rounded-full font-medium">
                   Daily
                 </span>
               </div>
 
               {dailyStory ? (
-                <div className="flex flex-col lg:flex-row gap-4">
-                  {/* Story Preview - Image */}
-                  <div className="lg:w-1/3">
-                    <div className="relative w-full h-48 mb-3 rounded-lg overflow-hidden">
-                      {dailyStory.thumbnail_url ? (
-                        <Image
-                          src={dailyStory.thumbnail_url}
-                          fill
-                          alt={dailyStory.title}
-                          className="object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-primary/20 flex items-center justify-center">
-                          <span className="text-primary text-opacity-70 text-xl font-medium">
-                            Noor Tales
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                <div className="p-5">
+                 <div className="flex flex-col items-center justify-center h-[400px] p-5">
+                    {/* Story Preview */}
+                    <div className="flex-1 overflow-hidden">
+                      <div className="relative w-full h-48 mb-3 rounded-lg overflow-hidden">
+                        {dailyStory.thumbnail_url ? (
+                          <Image
+                            src={dailyStory.thumbnail_url}
+                            fill
+                            alt={dailyStory.title}
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-primary text-opacity-70 text-xl font-medium">
+                              Noor Tales
+                            </span>
+                          </div>
+                        )}
 
-                  {/* Story Content */}
-                  <div className="lg:w-2/3">
-                    <h3 className="text-xl font-semibold text-primary mb-2">
-                      {dailyStory.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm mb-3">
-                      {dailyStory.content?.substring(0, 220) ||
-                        "An inspiring story from Islamic history..."}
-                      ...
-                    </p>
+                        {/* Audio Play Button */}
+                        {dailyStory.audio_url && (
+                          <button
+                            onClick={() =>
+                              setIsStoryAudioPlaying(!isStoryAudioPlaying)
+                            }
+                            className="absolute bottom-3 right-3 bg-accent text-primary p-2 rounded-full shadow-md"
+                          >
+                            {isStoryAudioPlaying ? (
+                              <FaPause size={14} />
+                            ) : (
+                              <FaPlay size={14} />
+                            )}
+                          </button>
+                        )}
 
-                    <div className="bg-primary/10 p-3 rounded-lg mb-4">
-                      <h4 className="font-semibold text-primary text-sm mb-1">
-                        Moral Lesson:
-                      </h4>
-                      <p className="text-gray-600 text-sm">
-                        {dailyStory.moral_lesson ||
-                          "Be kind, patient, and remember Allah in all situations."}
+                        {/* Hidden Audio Player */}
+                        {dailyStory.audio_url && (
+                          <div className="hidden">
+                            <ReactAudioPlayer
+                              src={dailyStory.audio_url}
+                              autoPlay={isStoryAudioPlaying}
+                              controls
+                              onPlay={() => setIsStoryAudioPlaying(true)}
+                              onPause={() => setIsStoryAudioPlaying(false)}
+                              onEnded={() => setIsStoryAudioPlaying(false)}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <h3 className="text-xl font-semibold text-primary mb-2">
+                        {dailyStory.title}
+                      </h3>
+                      <p className="text-gray-600 text-sm mb-3 line-clamp-4 max-h-24 overflow-hidden">
+                        {dailyStory.content?.substring(0, 300) ||
+                          "An inspiring story from Islamic history..."}
+                        ...
                       </p>
+
+                      <div className="bg-primary/10 p-3 rounded-lg mt-2">
+                        <h4 className="font-semibold text-primary text-sm mb-1">
+                          Moral Lesson:
+                        </h4>
+                        <p className="text-gray-600 text-sm line-clamp-2">
+                          {dailyStory.moral_lesson ||
+                            "Be kind, patient, and remember Allah in all situations."}
+                        </p>
+                      </div>
                     </div>
 
-                    <Link
-                      href={
-                        dailyStory.id ? `/stories/${dailyStory.id}` : "/stories"
-                      }
-                      className="inline-flex items-center bg-primary text-white px-3 py-1.5 text-sm rounded-md hover:bg-primary/90"
-                    >
-                      Read Full Story{" "}
-                      <FaArrowRight className="ml-1" size={10} />
-                    </Link>
+                    {/* Action Area */}
+                    <div className="mt-auto pt-4 flex justify-between items-center">
+                      <span className="text-xs text-gray-500">
+                        {dailyStory.publish_date &&
+                          new Date(dailyStory.publish_date).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                            }
+                          )}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        {user && (
+                          <button
+                            onClick={toggleFavorite}
+                            className={`text-lg ${
+                              isFavorite ? "text-accent" : "text-gray-400"
+                            }`}
+                          >
+                            <FaStar />
+                          </button>
+                        )}
+                        <Link
+                          href={
+                            dailyStory.id
+                              ? `/stories/${dailyStory.id}`
+                              : "/stories"
+                          }
+                          className="inline-flex items-center bg-primary text-white px-3 py-1.5 text-sm rounded-md hover:bg-primary/90"
+                        >
+                          Read Full Story{" "}
+                          <FaArrowRight className="ml-1" size={10} />
+                        </Link>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <FaBook className="text-primary/30 text-6xl mb-4" />
-                  <p className="text-gray-500 text-center mb-3">
-                    Today's story is coming soon!
-                  </p>
-                  <Link
-                    href="/stories"
-                    className="inline-flex items-center bg-primary text-white px-4 py-2 text-sm rounded-md hover:bg-primary/90"
-                  >
-                    Browse Stories <FaArrowRight className="ml-1" size={10} />
-                  </Link>
-                </div>
+                <div className="flex flex-col items-center justify-center h-[400px] p-5">
+    {/* Islamic pattern background */}
+    <div className="absolute inset-0 opacity-5 pattern-islamic bg-repeat"></div>
+    
+    {/* Content */}
+    <div className="relative z-10 flex flex-col items-center text-center">
+      <div className="w-24 h-24 mb-5 flex items-center justify-center rounded-full bg-accent/10 text-accent">
+        <FaBook className="text-4xl" />
+      </div>
+      
+      <h3 className="text-xl font-semibold text-primary mb-3">Today's Story Coming Soon</h3>
+      
+      <p className="text-gray-600 text-sm mb-6 max-w-md">
+        Our storytellers are crafting a beautiful tale just for you. 
+        Check back later today or explore our collection of other inspiring stories.
+      </p>
+      
+      {/* Preview of story categories */}
+      <div className="grid grid-cols-2 gap-3 mb-6 w-full max-w-xs">
+        <div className="bg-primary/5 p-3 rounded-lg text-center">
+          <span className="block text-primary font-medium text-sm">Prophet Stories</span>
+          <span className="text-xs text-gray-500">25 stories</span>
+        </div>
+        <div className="bg-accent/5 p-3 rounded-lg text-center">
+          <span className="block text-accent font-medium text-sm">Companion Tales</span>
+          <span className="text-xs text-gray-500">18 stories</span>
+        </div>
+      </div>
+      
+      <Link
+        href="/stories"
+        className="inline-flex items-center bg-primary text-white px-4 py-2 text-sm rounded-md hover:bg-primary/90 transition-all"
+      >
+        Browse Stories <FaArrowRight className="ml-1" size={10} />
+      </Link>
+    </div>
+  </div>
               )}
+
+              <div className="p-4 flex justify-center">
+                <Link
+                  href="/stories"
+                  className="inline-block bg-primary text-white font-medium px-4 py-1.5 text-sm uppercase tracking-wide
+                  transition-all duration-300 hover:bg-accent hover:text-primary hover:scale-105 
+                  rounded-md border border-primary/50 shadow-md"
+                >
+                  Explore All Stories
+                </Link>
+              </div>
             </div>
           </div>
         </section>
-
         {/* Features Section */}
         <section>
           <h2 className="text-2xl font-title font-bold text-primary mb-5 text-center">

@@ -735,13 +735,15 @@ export default function HomePage({
                       <h3 className="text-xl font-semibold text-primary mb-2">
                         {dailyStory.title}
                       </h3>
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-4 max-h-24 overflow-hidden">
-                        {dailyStory.content?.substring(0, 300) ||
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-4 max-h-24 overflow-hidden">
+                      
+                       {dailyStory.content?.substring(0, 300) ||
                           "An inspiring story from Islamic history..."}
                         ...
                       </p>
+                  
 
-                      <div className="bg-primary/10 p-3 rounded-lg mt-2">
+                      <div className="bg-primary/10 p-3 rounded-lg mt-3">
                         <h4 className="font-semibold text-primary text-sm mb-1">
                           Moral Lesson:
                         </h4>
@@ -753,8 +755,8 @@ export default function HomePage({
                     </div>
 
                     {/* Action Area */}
-                    <div className="mt-auto pt-4 flex justify-between items-center">
-                      <span className="text-xs text-gray-500">
+                    <div className="mt-auto pt-4 w-full flex justify-between items-center">
+                      <span className="text-md text-gray-500 max-w-[40%] truncate">
                         {dailyStory.publish_date &&
                           new Date(dailyStory.publish_date).toLocaleDateString(
                             "en-US",
@@ -791,43 +793,47 @@ export default function HomePage({
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-[400px] p-5">
-    {/* Islamic pattern background */}
-    <div className="absolute inset-0 opacity-5 pattern-islamic bg-repeat"></div>
-    
-    {/* Content */}
-    <div className="relative z-10 flex flex-col items-center text-center">
-      <div className="w-24 h-24 mb-5 flex items-center justify-center rounded-full bg-accent/10 text-accent">
-        <FaBook className="text-4xl" />
-      </div>
-      
-      <h3 className="text-xl font-semibold text-primary mb-3">Today's Story Coming Soon</h3>
-      
-      <p className="text-gray-600 text-sm mb-6 max-w-md">
-        Our storytellers are crafting a beautiful tale just for you. 
-        Check back later today or explore our collection of other inspiring stories.
-      </p>
-      
-      {/* Preview of story categories */}
-      <div className="grid grid-cols-2 gap-3 mb-6 w-full max-w-xs">
-        <div className="bg-primary/5 p-3 rounded-lg text-center">
-          <span className="block text-primary font-medium text-sm">Prophet Stories</span>
-          <span className="text-xs text-gray-500">25 stories</span>
-        </div>
-        <div className="bg-accent/5 p-3 rounded-lg text-center">
-          <span className="block text-accent font-medium text-sm">Companion Tales</span>
-          <span className="text-xs text-gray-500">18 stories</span>
-        </div>
-      </div>
-      
-      <Link
-        href="/stories"
-        className="inline-flex items-center bg-primary text-white px-4 py-2 text-sm rounded-md hover:bg-primary/90 transition-all"
-      >
-        Browse Stories <FaArrowRight className="ml-1" size={10} />
-      </Link>
+                <div className="relative flex flex-col items-center justify-center h-[400px] p-5 overflow-hidden">
+  {/* Islamic Background Image */}
+  <div 
+    className="absolute inset-0 bg-cover bg-center z-0"
+    style={{ 
+      backgroundImage: "url('/images/islamic-pattern-bg.png')", 
+      filter: "brightness(0.35)" 
+    }}
+  ></div>
+  
+  {/* Gradient Overlay to ensure text visibility */}
+  <div className="absolute inset-0 bg-gradient-to-b from-primary/30 to-black/50 z-0"></div>
+  
+  {/* Your existing content - now with z-10 to appear above the background */}
+  <div className="relative z-10 flex flex-col items-center text-center">
+   {/* Crescent Moon Icon from react-icons/fa instead of book */}
+   <div className="w-16 h-16 flex items-center justify-center bg-white/10 backdrop-blur-sm rounded-full mb-4 border border-white/20">
+   <svg 
+  xmlns="http://www.w3.org/2000/svg" 
+  viewBox="0 0 24 24" 
+  fill="none" 
+  stroke="currentColor" 
+  strokeWidth="2" 
+  strokeLinecap="round" 
+  strokeLinejoin="round" 
+  className="text-white w-8 h-8"
+>
+  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+</svg>
     </div>
+    <p className="text-white text-center mb-3">
+      Today's story is coming soon!
+    </p>
+    <Link
+      href="/stories"
+      className="inline-flex items-center bg-white text-primary px-4 py-2 text-sm rounded-md hover:bg-accent hover:text-white transition-all"
+    >
+      Browse Stories <FaArrowRight className="ml-1" size={10} />
+    </Link>
   </div>
+</div>
               )}
 
               <div className="p-4 flex justify-center">
@@ -923,82 +929,52 @@ export const getServerSideProps: GetServerSideProps = async () => {
       console.log("OPENAI_API_KEY available:", !!process.env.OPENAI_API_KEY);
 
       try {
-        console.log("Attempting to call OpenAI API...");
-
-        // Generate a new story using OpenAI
-        const openaiResponse = await axios.post(
-          "https://api.openai.com/v1/chat/completions",
-          {
-            model: "gpt-3.5-turbo",
-            messages: [
-              {
-                role: "user",
-                content:
-                  'Write a very short Islamic story for children with this format: {"title": "Story Title", "content": "Story content", "moral_lesson": "The moral lesson"}',
-              },
-            ],
-            temperature: 0.7,
-            max_tokens: 500,
-          },
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-            },
+        // Call our API endpoint that now uses Gemini instead of directly calling OpenAI
+        console.log("Calling story generation API...");
+        
+        // Make sure you have a proper base URL for your API endpoint
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+                      (process.env.NODE_ENV === "development" 
+                        ? "http://localhost:3000" 
+                        : "https://your-production-domain.com");
+        
+        const response = await fetch(`${baseUrl}/api/generate-story`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.ADMIN_API_KEY}`
           }
-        );
-
-        console.log("OpenAI API call successful!");
-        console.log("Response status:", openaiResponse.status);
-
-        // Parse the response
-        const responseContent = openaiResponse.data.choices[0].message.content;
-
-        let storyData;
-        try {
-          storyData = JSON.parse(responseContent);
-          console.log("Successfully parsed story data:", storyData.title);
-        } catch (parseError) {
-          console.error("Error parsing OpenAI response:", parseError);
-          throw new Error("Failed to parse the generated story");
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(`API responded with status: ${response.status}, message: ${errorData.message || 'Unknown error'}`);
         }
-
-        // Insert the new story into the database
-        console.log("Inserting new story into database...");
-        const { data: newStory, error: insertError } = await supabase
-          .from("stories")
-          .insert({
-            title: storyData.title,
-            content: storyData.content,
-            moral_lesson: storyData.moral_lesson,
-            audio_url: null,
-            thumbnail_url: null,
-            category: "daily",
-            publish_date: today,
-            is_premium: false,
-          })
-          .select()
-          .single();
-
-        if (insertError) {
-          console.error("Error inserting new story:", insertError);
-          throw insertError;
+        
+        const result = await response.json();
+        
+        console.log("API response:", result);
+        
+        if (result.success && result.storyId) {
+          // Fetch the newly generated story
+          const { data: newStory, error: fetchError } = await supabase
+            .from("stories")
+            .select("*")
+            .eq("id", result.storyId)
+            .single();
+            
+          if (fetchError) {
+            throw fetchError;
+          }
+          
+          dailyStory = newStory;
+          console.log("Successfully retrieved newly generated story with ID:", newStory.id);
+        } else {
+          throw new Error("Story generation API didn't return a valid story ID");
         }
-
-        // Use the newly generated story
-        dailyStory = newStory;
-        console.log(
-          "Successfully generated and saved a new story with ID:",
-          newStory.id
-        );
       } catch (generationError) {
         console.error("Error generating new story:", generationError);
-        if (generationError.response) {
-          console.error(
-            "OpenAI API error details:",
-            generationError.response.data
-          );
-        }
+        // Don't rethrow the error - just log it and continue with a null dailyStory
       }
     }
 

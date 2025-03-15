@@ -8,6 +8,21 @@ type ResponseData = {
   storyId?: string;
 };
 
+const storyImages = [
+  '/images/stories/mosque.jpg',
+  '/images/stories/quran.jpg',
+  '/images/stories/prayer.jpg',
+  '/images/stories/kindness.jpg',
+  '/images/stories/sharing.jpg',
+  '/images/stories/nature.jpg',
+  '/images/stories/family.jpg',
+  '/images/stories/mosque-night.jpg',
+  '/images/stories/arabic-calligraphy.jpg',
+  '/images/stories/islamic-art.jpg'
+];
+
+
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData>
@@ -25,6 +40,9 @@ export default async function handler(
   }
   
   try {
+    // const randomImageUrl = storyImages[Math.floor(Math.random() * storyImages.length)];
+    
+    const randomImageUrl = storyImages[Math.floor(Math.random() * storyImages.length)];
     const today = new Date().toISOString().split('T')[0];
     
     // Check if there's already a story for today
@@ -46,50 +64,63 @@ export default async function handler(
         storyId: existingStory.id
       });
     }
-    
-    // Generate a story using OpenAI
-    const openaiResponse = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
+    console.log("Making request to Gemini API...");
+    // Generate a story using Google Gemini API
+    const geminiResponse = await axios.post(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent',
       {
-        model: 'gpt-4o',
-        messages: [
+        contents: [
           {
-            role: 'system',
-            content: `You are a children's storyteller specializing in Islamic stories with clear moral lessons. 
-            Create an engaging short story (around 500 words) for Muslim children aged 5-10.
-            The story should be simple, educational, and teach Islamic values.
-            
-            Format your response as a valid JSON object with the following structure:
-            {
-              "title": "Title of the story",
-              "content": "The complete story text",
-              "moral_lesson": "A clear explanation of the moral lesson in 1-2 sentences"
-            }`
-          },
-          {
-            role: 'user',
-            content: 'Generate a new Islamic children\'s story for today.'
+            parts: [
+              {
+                text: `You are a children's storyteller specializing in Islamic stories with clear moral lessons. 
+                Create an engaging short story (around 500 words) for Muslim children aged 5-10.
+                The story should be simple, educational, and teach Islamic values.
+                
+                Format your response as a valid JSON object with the following structure:
+                {
+                  "title": "Title of the story",
+                  "content": "The complete story text",
+                  "moral_lesson": "A clear explanation of the moral lesson in 1-2 sentences"
+                }
+                
+                Generate a new Islamic children's story for today.`
+              }
+            ]
           }
         ],
-        temperature: 0.7,
-        max_tokens: 1500
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1500
+        }
       },
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+          'x-goog-api-key': process.env.GEMINI_API_KEY
         }
       }
     );
-    
+
+    console.log("Received response from Gemini API");
+  console.log("Response status:", geminiResponse.status);
+  // console.log("Response first 200 chars:", responseText.substring(0, 200));
+  
     // Parse the response
-    const responseContent = openaiResponse.data.choices[0].message.content;
+    const responseText = geminiResponse.data.candidates[0].content.parts[0].text;
+    console.log("Response first 200 chars:", responseText.substring(0, 200));
     let storyData;
     
     try {
-      storyData = JSON.parse(responseContent);
+      // Find JSON object in the response using regex
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No JSON found in the response');
+      }
+      
+      storyData = JSON.parse(jsonMatch[0]);
     } catch (error) {
-      console.error('Error parsing OpenAI response:', error);
+      console.error('Error parsing Gemini response:', error);
       throw new Error('Error parsing the generated story data');
     }
     
@@ -98,6 +129,7 @@ export default async function handler(
       throw new Error('Generated story data is incomplete');
     }
     
+console.log("ZRYTEYYTYYYYGGGGGG",storyData.title,storyData.randomImageUrl)
     // Insert new story into database
     const { data: newStory, error: insertError } = await supabase
       .from('stories')
@@ -108,7 +140,7 @@ export default async function handler(
         category: 'daily',
         publish_date: today,
         is_premium: false,
-        // Note: We'll add audio_url later after generating it with ElevenLabs
+        thumbnail_url: randomImageUrl,
       })
       .select('id')
       .single();
@@ -116,10 +148,6 @@ export default async function handler(
     if (insertError) {
       throw new Error(`Error inserting new story: ${insertError.message}`);
     }
-    
-    // TODO: Generate audio with ElevenLabs
-    // This would be a separate API call to ElevenLabs
-    // Then update the story with the audio URL
     
     return res.status(200).json({
       success: true,

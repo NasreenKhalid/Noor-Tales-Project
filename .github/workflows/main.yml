@@ -1,0 +1,16 @@
+name: Prevent Supabase Inactivity
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Runs at midnight every Sunday
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  ping-database:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Make an API request to Supabase
+        run: |
+          curl -X GET "https://lilontirukzmquhkgeqd.supabase.co/rest/v1/stories?select=id&limit=1" \
+          -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpbG9udGlydWt6bXF1aGtnZXFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzOTUxMzEsImV4cCI6MjA1NTk3MTEzMX0.v12tB2KRGh-_u7k6JlCW9ZBv5LdjnYGCz5Cp7detBaU" \
+          -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpbG9udGlydWt6bXF1aGtnZXFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzOTUxMzEsImV4cCI6MjA1NTk3MTEzMX0.v12tB2KRGh-_u7k6JlCW9ZBv5LdjnYGCz5Cp7detBaU"
